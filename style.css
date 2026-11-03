@@ -767,74 +767,65 @@ canvas#gameCanvas {
 
 /* ================= MOBILE CONTROLS OVERLAY ================= */
 #mobile-controls {
-    position: absolute;
+    position: fixed;
     inset: 0;
     pointer-events: none;
     z-index: 35;
-    display: flex;
-    justify-content: space-between;
-    align-items: flex-end;
-    padding: 16px 20px;
+    display: none;
 }
 
-/* Left: Floating Dynamic Virtual Joystick Touch Zone */
-#mobile-joystick-zone {
-    pointer-events: auto;
-    position: fixed;
-    left: 0;
-    bottom: 0;
-    width: 48vw;
-    height: 75vh;
-    touch-action: none;
-    z-index: 34;
+body.is-mobile #mobile-controls {
+    display: block !important;
 }
 
+/* Floating Dynamic Virtual Joystick (No blocking zone, appears under thumb) */
 #joystick-base {
-    position: fixed;
-    width: 96px;
-    height: 96px;
-    border-radius: 50%;
-    background: radial-gradient(circle, rgba(30, 41, 59, 0.55) 0%, rgba(15, 23, 42, 0.85) 100%);
-    border: 2px solid #38bdf8;
-    box-shadow: 0 0 16px rgba(56, 189, 248, 0.45), inset 0 0 10px rgba(0, 0, 0, 0.85);
+    position: fixed !important;
+    width: 92px !important;
+    height: 92px !important;
+    border-radius: 50% !important;
+    background: radial-gradient(circle, rgba(30, 41, 59, 0.6) 0%, rgba(15, 23, 42, 0.85) 100%) !important;
+    border: 2px solid #38bdf8 !important;
+    box-shadow: 0 0 16px rgba(56, 189, 248, 0.5), inset 0 0 10px rgba(0, 0, 0, 0.85) !important;
     display: none;
     opacity: 0;
     align-items: center;
     justify-content: center;
     user-select: none;
     -webkit-user-select: none;
-    pointer-events: none;
-    transform: translate(-50%, -50%);
-    z-index: 36;
-    transition: opacity 0.08s ease;
+    pointer-events: none !important;
+    transform: translate(-50%, -50%) !important;
+    z-index: 55 !important;
 }
 
 #joystick-stick {
     position: absolute;
-    width: 42px;
-    height: 42px;
-    border-radius: 50%;
-    background: radial-gradient(circle, #38bdf8 0%, #1e40af 100%);
-    border: 2px solid #ffffff;
-    box-shadow: 0 4px 8px rgba(0,0,0,0.6), inset 0 2px 4px rgba(255,255,255,0.4);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 16px;
-    pointer-events: none;
+    width: 40px !important;
+    height: 40px !important;
+    border-radius: 50% !important;
+    background: radial-gradient(circle, #38bdf8 0%, #1e40af 100%) !important;
+    border: 2px solid #ffffff !important;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.6), inset 0 2px 4px rgba(255,255,255,0.4) !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    font-size: 16px !important;
+    pointer-events: none !important;
     transform: translate(0px, 0px);
-    transition: transform 0.03s ease-out;
 }
 
 /* Right: Mobile Action Buttons */
 #mobile-actions-zone {
     pointer-events: auto;
+    position: fixed;
+    right: max(14px, env(safe-area-inset-right));
+    bottom: max(14px, env(safe-area-inset-bottom));
     display: flex;
     flex-direction: column;
     gap: 6px;
     align-items: flex-end;
-    margin-bottom: 6px;
     touch-action: none;
+    z-index: 40;
 }
 
 .mobile-action-row {
@@ -934,7 +925,7 @@ canvas#gameCanvas {
 }
 
 /* ================= RESPONSIVE MOBILE EXPERIENCE ================= */
-@media (max-width: 950px), (pointer: coarse) {
+@media (max-width: 1024px), (pointer: coarse), (max-height: 600px) {
     html, body {
         margin: 0 !important;
         padding: 0 !important;
@@ -962,12 +953,14 @@ canvas#gameCanvas {
     }
 
     canvas#gameCanvas {
-        width: 100vw !important;
-        height: 100vh !important;
-        max-width: calc(100vh * 16 / 9) !important;
-        max-height: calc(100vw * 9 / 16) !important;
+        width: min(100vw, calc(100vh * 16 / 9)) !important;
+        height: min(100vh, calc(100vw * 9 / 16)) !important;
         aspect-ratio: 16 / 9 !important;
-        object-fit: contain !important;
+        display: block !important;
+        margin: auto !important;
+        position: absolute !important;
+        inset: 0 !important;
+        touch-action: none !important;
     }
 
     /* Completely hide bulky desktop panels that block the map */
@@ -1045,17 +1038,8 @@ canvas#gameCanvas {
         inset: 0 !important;
         pointer-events: none !important;
         z-index: 35 !important;
+        display: block !important;
         padding: 0 !important;
-    }
-
-    #mobile-joystick-zone {
-        position: fixed !important;
-        left: 0 !important;
-        bottom: 0 !important;
-        width: 48vw !important;
-        height: 78vh !important;
-        pointer-events: auto !important;
-        touch-action: none !important;
     }
 
     #joystick-base {

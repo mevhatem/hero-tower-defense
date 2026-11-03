@@ -256,10 +256,12 @@ class Game {
         }
 
         if (this.input.isTouchMode) {
-            this.dom.mobileControls.classList.remove('hidden');
+            document.body.classList.add('is-mobile');
+            if (this.dom.mobileControls) this.dom.mobileControls.style.display = 'block';
             if (this.dom.mobileToggleBtn) this.dom.mobileToggleBtn.classList.add('primary');
         } else {
-            this.dom.mobileControls.classList.add('hidden');
+            document.body.classList.remove('is-mobile');
+            if (this.dom.mobileControls) this.dom.mobileControls.style.display = 'none';
             if (this.dom.mobileToggleBtn) this.dom.mobileToggleBtn.classList.remove('primary');
         }
     }
@@ -282,8 +284,8 @@ class Game {
     }
 
     setupMobileControls() {
-        // Auto-detect touch device or small screen
-        const isTouchDevice = ('ontouchstart' in window) || (navigator.maxTouchPoints > 0) || window.innerWidth <= 900;
+        // Auto-detect touch device, tablet, or phone screens
+        const isTouchDevice = ('ontouchstart' in window) || (navigator.maxTouchPoints > 0) || window.innerWidth <= 1024 || window.innerHeight <= 600;
         if (isTouchDevice) {
             this.enableMobileControls(true);
         }
@@ -298,7 +300,7 @@ class Game {
         // Check orientation for mobile
         const checkOrientation = () => {
             if (this.dom.portraitAdvisory) {
-                if (window.innerWidth <= 900 && window.innerHeight > window.innerWidth) {
+                if ((this.input.isTouchMode || window.innerWidth <= 1024) && window.innerHeight > window.innerWidth) {
                     this.dom.portraitAdvisory.classList.remove('hidden');
                 } else {
                     this.dom.portraitAdvisory.classList.add('hidden');
@@ -309,7 +311,7 @@ class Game {
         window.addEventListener('orientationchange', checkOrientation);
         checkOrientation();
 
-        // 1. Touch on Canvas (Aiming skills & Building Towers)
+        // 1. Precise Coordinate Mapper
         const getCanvasTouchCoords = (touch) => {
             const rect = this.canvas.getBoundingClientRect();
             const scaleX = this.canvas.width / rect.width;
@@ -320,38 +322,10 @@ class Game {
             };
         };
 
-        this.canvas.addEventListener('touchstart', (e) => {
-            sounds.init();
-            if (!this.input.isTouchMode) this.enableMobileControls(true);
-            const touch = e.changedTouches[0];
-            const coords = getCanvasTouchCoords(touch);
-            this.input.mouseX = coords.x;
-            this.input.mouseY = coords.y;
-
-            if (this.hero.isAimingMeteor || this.hero.isAimingPeasant) {
-                this.input.mouseLeft = true;
-                e.preventDefault();
-            } else {
-                this.handleClick(coords.x, coords.y);
-            }
-        }, { passive: false });
-
-        this.canvas.addEventListener('touchmove', (e) => {
-            const touch = e.changedTouches[0];
-            const coords = getCanvasTouchCoords(touch);
-            this.input.mouseX = coords.x;
-            this.input.mouseY = coords.y;
-            this.hoveredSpot = this.map.getSpotAt(coords.x, coords.y);
-            if (this.hero.isAimingMeteor || this.hero.isAimingPeasant) {
-                e.preventDefault();
-            }
-        }, { passive: false });
-
-        // 2. Floating Dynamic Analog Joystick (Pops up wherever player touches in bottom-left zone)
+        // 2. Floating Dynamic Analog Joystick State
         let joystickTouchId = null;
         let startX = 0;
         let startY = 0;
-        let touchStartTime = 0;
         const maxRadius = 38;
 
         const updateJoystick = (touch) => {
@@ -387,34 +361,55 @@ class Game {
             this.dom.joystickBase.style.opacity = '0';
         };
 
-        if (this.dom.joystickZone) {
-            this.dom.joystickZone.addEventListener('touchstart', (e) => {
-                sounds.init();
-                const touch = e.changedTouches[0];
+        // 3. Unified Touch Interaction on Canvas
+        this.canvas.addEventListener('touchstart', (e) => {
+            sounds.init();
+            if (!this.input.isTouchMode) this.enableMobileControls(true);
 
+            for (let i = 0; i < e.changedTouches.length; i++) {
+                const touch = e.changedTouches[i];
+                const coords = getCanvasTouchCoords(touch);
+                this.input.mouseX = coords.x;
+                this.input.mouseY = coords.y;
+
+                // Priority A: Aiming a skill (Meteor or Peasant) -> cast immediately!
                 if (this.hero.isAimingMeteor || this.hero.isAimingPeasant) {
-                    const coords = getCanvasTouchCoords(touch);
-                    this.input.mouseX = coords.x;
-                    this.input.mouseY = coords.y;
                     this.input.mouseLeft = true;
                     e.preventDefault();
                     return;
                 }
 
-                e.preventDefault();
-                joystickTouchId = touch.identifier;
-                startX = touch.clientX;
-                startY = touch.clientY;
-                touchStartTime = performance.now();
+                // Priority B: Tapped a Tower Spot anywhere on the map (Left or Right!) -> open tower dock!
+                const spot = this.map.getSpotAt(coords.x, coords.y);
+                if (spot) {
+                    e.preventDefault();
+                    this.selectedSpot = spot;
+                    this.openTowerModal(spot);
+                    return;
+                }
 
-                // Dynamic Spawn: Place the joystick circle right under the player's thumb!
-                this.dom.joystickBase.style.left = `${touch.clientX}px`;
-                this.dom.joystickBase.style.top = `${touch.clientY}px`;
-                this.dom.joystickBase.style.display = 'flex';
-                this.dom.joystickBase.style.opacity = '1';
-                this.dom.joystickStick.style.transform = 'translate(0px, 0px)';
-            }, { passive: false });
-        }
+                // Priority C: Touched movement zone (Left 45% of screen) -> Spawn Floating Joystick!
+                if (touch.clientX < window.innerWidth * 0.45 && joystickTouchId === null) {
+                    e.preventDefault();
+                    joystickTouchId = touch.identifier;
+                    startX = touch.clientX;
+                    startY = touch.clientY;
+
+                    // Place joystick base right under the thumb!
+                    this.dom.joystickBase.style.left = `${touch.clientX}px`;
+                    this.dom.joystickBase.style.top = `${touch.clientY}px`;
+                    this.dom.joystickBase.style.display = 'flex';
+                    this.dom.joystickBase.style.opacity = '1';
+                    this.dom.joystickStick.style.transform = 'translate(0px, 0px)';
+                    return;
+                }
+
+                // Priority D: Tapped empty ground elsewhere on the map -> close open modal
+                if (this.selectedSpot) {
+                    this.closeTowerModal();
+                }
+            }
+        }, { passive: false });
 
         window.addEventListener('touchmove', (e) => {
             if (joystickTouchId === null) return;
@@ -429,17 +424,7 @@ class Game {
         window.addEventListener('touchend', (e) => {
             if (joystickTouchId === null) return;
             for (let i = 0; i < e.changedTouches.length; i++) {
-                const touch = e.changedTouches[i];
-                if (touch.identifier === joystickTouchId) {
-                    const elapsed = performance.now() - touchStartTime;
-                    const movedDist = Math.hypot(touch.clientX - startX, touch.clientY - startY);
-
-                    // If it was a quick stationary tap (< 200ms and moved < 8px), treat it as a map tap!
-                    if (elapsed < 200 && movedDist < 8) {
-                        const coords = getCanvasTouchCoords(touch);
-                        this.handleClick(coords.x, coords.y);
-                    }
-
+                if (e.changedTouches[i].identifier === joystickTouchId) {
                     hideJoystick();
                     break;
                 }
@@ -527,7 +512,7 @@ class Game {
 
     openTowerModal(spot) {
         this.selectedSpot = spot;
-        const isMobile = this.input.isTouchMode || window.innerWidth <= 950;
+        const isMobile = this.input.isTouchMode || document.body.classList.contains('is-mobile') || window.innerWidth <= 1024 || window.innerHeight <= 600;
 
         if (isMobile) {
             this.dom.towerModal.classList.add('hidden');

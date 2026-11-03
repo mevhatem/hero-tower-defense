@@ -647,6 +647,124 @@ canvas#gameCanvas {
     display: none !important;
 }
 
+/* Desktop vs Mobile Toggle Helpers */
+.btn-text-mobile {
+    display: none;
+}
+.hero-mini-badge {
+    display: none;
+}
+
+/* ================= MOBILE TOWER QUICK PICKER DOCK ================= */
+#mobile-tower-dock {
+    position: fixed;
+    bottom: 14px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(17, 20, 34, 0.95);
+    border: 2px solid #fbbf24;
+    box-shadow: 0 0 25px rgba(0, 0, 0, 0.9), inset 1px 1px 0 #fbbf24;
+    border-radius: 8px;
+    padding: 6px 12px;
+    z-index: 60;
+    pointer-events: auto;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    touch-action: none;
+    max-width: 95vw;
+}
+
+.dock-header {
+    width: 100%;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 10px;
+    color: #fbbf24;
+    border-bottom: 1px solid #334155;
+    padding-bottom: 3px;
+    margin-bottom: 2px;
+}
+
+.dock-options {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    justify-content: center;
+    flex-wrap: nowrap;
+}
+
+.dock-btn {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    width: 50px;
+    height: 52px;
+    background: #1e293b;
+    border: 2px solid #475569;
+    border-radius: 6px;
+    color: #fff;
+    cursor: pointer;
+    box-shadow: inset 1px 1px 0 rgba(255,255,255,0.2), 0 3px 6px rgba(0,0,0,0.6);
+    user-select: none;
+    -webkit-user-select: none;
+    touch-action: manipulation;
+    padding: 2px;
+    transition: transform 0.05s ease, filter 0.05s ease;
+}
+
+.dock-btn:active:not(.disabled) {
+    transform: scale(0.92);
+    filter: brightness(1.2);
+}
+
+.dock-btn.disabled {
+    opacity: 0.35;
+    filter: grayscale(1);
+    border-color: #334155;
+    cursor: not-allowed;
+}
+
+.dock-btn .dock-icon {
+    font-size: 22px;
+    line-height: 1;
+}
+
+.dock-btn .dock-cost {
+    font-size: 9px;
+    color: #fde047;
+    margin-top: 3px;
+    font-family: 'Silkscreen', monospace;
+    font-weight: 700;
+}
+
+.dock-btn.close-btn {
+    background: #450a0a;
+    border-color: #7f1d1d;
+}
+.dock-btn.close-btn .dock-cost {
+    color: #fca5a5;
+}
+
+.dock-btn.sell-btn {
+    background: #78350f;
+    border-color: #b45309;
+}
+.dock-btn.sell-btn .dock-cost {
+    color: #fef08a;
+}
+
+.dock-btn.upg-btn {
+    background: #14532d;
+    border-color: #15803d;
+}
+.dock-btn.upg-btn .dock-cost {
+    color: #86efac;
+}
+
 /* ================= MOBILE CONTROLS OVERLAY ================= */
 #mobile-controls {
     position: absolute;
@@ -663,20 +781,20 @@ canvas#gameCanvas {
 #mobile-joystick-zone {
     pointer-events: auto;
     position: relative;
-    width: 120px;
-    height: 120px;
+    width: 100px;
+    height: 100px;
     margin-bottom: 6px;
     touch-action: none;
 }
 
 #joystick-base {
     position: relative;
-    width: 110px;
-    height: 110px;
+    width: 96px;
+    height: 96px;
     border-radius: 50%;
-    background: radial-gradient(circle, rgba(30, 41, 59, 0.75) 0%, rgba(15, 23, 42, 0.9) 100%);
-    border: 3px solid #38bdf8;
-    box-shadow: 0 0 14px rgba(56, 189, 248, 0.4), inset 0 0 10px rgba(0, 0, 0, 0.8);
+    background: radial-gradient(circle, rgba(30, 41, 59, 0.5) 0%, rgba(15, 23, 42, 0.75) 100%);
+    border: 2px solid rgba(56, 189, 248, 0.6);
+    box-shadow: 0 0 12px rgba(56, 189, 248, 0.3), inset 0 0 8px rgba(0, 0, 0, 0.8);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -686,8 +804,8 @@ canvas#gameCanvas {
 
 #joystick-stick {
     position: absolute;
-    width: 48px;
-    height: 48px;
+    width: 42px;
+    height: 42px;
     border-radius: 50%;
     background: radial-gradient(circle, #38bdf8 0%, #1e40af 100%);
     border: 2px solid #ffffff;
@@ -695,7 +813,7 @@ canvas#gameCanvas {
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 18px;
+    font-size: 16px;
     pointer-events: none;
     transform: translate(0px, 0px);
     transition: transform 0.04s ease-out;
@@ -706,7 +824,7 @@ canvas#gameCanvas {
     pointer-events: auto;
     display: flex;
     flex-direction: column;
-    gap: 8px;
+    gap: 6px;
     align-items: flex-end;
     margin-bottom: 6px;
     touch-action: none;
@@ -714,7 +832,7 @@ canvas#gameCanvas {
 
 .mobile-action-row {
     display: flex;
-    gap: 8px;
+    gap: 6px;
 }
 
 .touch-action-btn {
@@ -731,7 +849,7 @@ canvas#gameCanvas {
     -webkit-user-select: none;
     touch-action: none;
     box-shadow: inset 1px 1px 0 rgba(255,255,255,0.4), inset -2px -2px 0 rgba(0,0,0,0.6), 0 4px 8px rgba(0,0,0,0.7);
-    transition: transform 0.06s ease, filter 0.06s ease;
+    transition: transform 0.05s ease, filter 0.05s ease;
 }
 
 .touch-action-btn:active {
@@ -745,15 +863,15 @@ canvas#gameCanvas {
 }
 
 .touch-action-btn .btn-label {
-    font-size: 8px;
-    margin-top: 2px;
+    font-size: 7px;
+    margin-top: 1px;
     letter-spacing: 0.5px;
 }
 
 .touch-action-btn.attack-btn {
-    width: 60px;
-    height: 60px;
-    background: #dc2626;
+    width: 56px;
+    height: 56px;
+    background: rgba(220, 38, 38, 0.9);
     color: #fff;
     border-color: #7f1d1d;
     box-shadow: inset 2px 2px 0 #f87171, inset -2px -2px 0 #450a0a, 0 4px 12px rgba(220, 38, 38, 0.5);
@@ -763,18 +881,18 @@ canvas#gameCanvas {
 }
 
 .touch-action-btn.dash-btn {
-    width: 52px;
-    height: 52px;
-    background: #0284c7;
+    width: 48px;
+    height: 48px;
+    background: rgba(2, 132, 199, 0.9);
     color: #fff;
     border-color: #0369a1;
     box-shadow: inset 2px 2px 0 #7dd3fc, inset -2px -2px 0 #082f49, 0 4px 10px rgba(2, 132, 199, 0.5);
 }
 
 .touch-action-btn.skill-btn {
-    width: 44px;
-    height: 44px;
-    background: #334155;
+    width: 40px;
+    height: 40px;
+    background: rgba(51, 65, 85, 0.85);
     color: #f1f5f9;
     border-color: #1e293b;
 }
@@ -787,9 +905,9 @@ canvas#gameCanvas {
 
 /* Portrait advisory */
 #portrait-advisory {
-    position: absolute;
+    position: fixed;
     inset: 0;
-    background: rgba(10, 14, 23, 0.94);
+    background: rgba(10, 14, 23, 0.96);
     z-index: 100;
     display: flex;
     align-items: center;
@@ -808,37 +926,179 @@ canvas#gameCanvas {
     margin-bottom: 12px;
 }
 
-/* Responsive breakpoint */
-@media (max-width: 900px), (pointer: coarse) {
+/* ================= RESPONSIVE MOBILE EXPERIENCE ================= */
+@media (max-width: 950px), (pointer: coarse) {
+    html, body {
+        margin: 0 !important;
+        padding: 0 !important;
+        width: 100vw !important;
+        height: 100vh !important;
+        overflow: hidden !important;
+        background: #000 !important;
+    }
+
+    #game-container {
+        position: fixed !important;
+        inset: 0 !important;
+        width: 100vw !important;
+        height: 100vh !important;
+        max-width: 100vw !important;
+        max-height: 100vh !important;
+        border: none !important;
+        box-shadow: none !important;
+        border-radius: 0 !important;
+        margin: 0 !important;
+        display: flex !important;
+        justify-content: center !important;
+        align-items: center !important;
+        background: #000 !important;
+    }
+
+    canvas#gameCanvas {
+        width: 100vw !important;
+        height: 100vh !important;
+        max-width: calc(100vh * 16 / 9) !important;
+        max-height: calc(100vw * 9 / 16) !important;
+        aspect-ratio: 16 / 9 !important;
+        object-fit: contain !important;
+    }
+
+    /* Completely hide bulky desktop panels that block the map */
+    #hero-hud {
+        display: none !important;
+    }
     #controls-hint {
         display: none !important;
     }
-    
-    #hero-hud {
-        bottom: auto;
-        top: 60px;
-        left: 12px;
-        transform: scale(0.85);
-        transform-origin: top left;
-        background: rgba(25, 28, 43, 0.88);
-    }
-
     #abilities-hud {
         display: none !important;
     }
+    #tower-modal {
+        display: none !important; /* Replaced by sleek #mobile-tower-dock */
+    }
+
+    /* Mobile Text & Badge Helpers */
+    .btn-text-desktop {
+        display: none !important;
+    }
+    .btn-text-mobile {
+        display: inline !important;
+    }
+    .hero-mini-badge {
+        display: flex !important;
+        color: #38bdf8 !important;
+        border-color: #0369a1 !important;
+    }
+
+    /* Compact Mobile Top Bar */
+    #top-bar {
+        position: fixed !important;
+        top: max(4px, env(safe-area-inset-top)) !important;
+        left: max(6px, env(safe-area-inset-left)) !important;
+        right: max(6px, env(safe-area-inset-right)) !important;
+        display: flex !important;
+        justify-content: space-between !important;
+        align-items: center !important;
+        gap: 3px !important;
+        z-index: 40 !important;
+    }
+
+    .stat-group {
+        gap: 3px !important;
+    }
 
     .pixel-badge {
-        padding: 4px 8px;
-        font-size: 11px;
+        padding: 3px 5px !important;
+        font-size: 10px !important;
+        gap: 2px !important;
+        border-width: 1px !important;
+    }
+
+    .pixel-icon {
+        font-size: 11px !important;
+    }
+
+    .header-controls {
+        gap: 3px !important;
     }
 
     .pixel-btn {
-        padding: 6px 8px;
-        font-size: 10px;
+        padding: 4px 6px !important;
+        font-size: 10px !important;
     }
 
-    #tower-modal {
-        transform: scale(0.85);
-        transform-origin: top left;
+    .pixel-btn.mini {
+        padding: 4px 6px !important;
+        min-width: 24px !important;
+    }
+
+    /* Fullscreen Screen-Anchored Mobile Controls */
+    #mobile-controls {
+        position: fixed !important;
+        inset: 0 !important;
+        pointer-events: none !important;
+        z-index: 35 !important;
+        padding: 0 !important;
+    }
+
+    #mobile-joystick-zone {
+        position: fixed !important;
+        left: max(14px, env(safe-area-inset-left)) !important;
+        bottom: max(14px, env(safe-area-inset-bottom)) !important;
+        width: 96px !important;
+        height: 96px !important;
+        pointer-events: auto !important;
+    }
+
+    #joystick-base {
+        width: 90px !important;
+        height: 90px !important;
+        background: radial-gradient(circle, rgba(30, 41, 59, 0.45) 0%, rgba(15, 23, 42, 0.7) 100%) !important;
+        border: 2px solid rgba(56, 189, 248, 0.6) !important;
+    }
+
+    #joystick-stick {
+        width: 38px !important;
+        height: 38px !important;
+        font-size: 15px !important;
+    }
+
+    #mobile-actions-zone {
+        position: fixed !important;
+        right: max(14px, env(safe-area-inset-right)) !important;
+        bottom: max(14px, env(safe-area-inset-bottom)) !important;
+        pointer-events: auto !important;
+        gap: 6px !important;
+    }
+
+    .mobile-action-row {
+        gap: 6px !important;
+    }
+
+    .touch-action-btn.attack-btn {
+        width: 52px !important;
+        height: 52px !important;
+        background: rgba(220, 38, 38, 0.9) !important;
+    }
+    .touch-action-btn.attack-btn .btn-icon {
+        font-size: 20px !important;
+    }
+
+    .touch-action-btn.dash-btn {
+        width: 44px !important;
+        height: 44px !important;
+        background: rgba(2, 132, 199, 0.9) !important;
+    }
+
+    .touch-action-btn.skill-btn {
+        width: 36px !important;
+        height: 36px !important;
+        background: rgba(51, 65, 85, 0.85) !important;
+    }
+    .touch-action-btn.skill-btn .btn-icon {
+        font-size: 14px !important;
+    }
+    .touch-action-btn .btn-label {
+        font-size: 6px !important;
     }
 }

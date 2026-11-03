@@ -60,8 +60,10 @@ class Game {
             speedText: document.getElementById('speed-text'),
             soundBtn: document.getElementById('sound-btn'),
             soundIcon: document.getElementById('sound-icon'),
+            fullscreenBtn: document.getElementById('fullscreen-btn'),
             mobileToggleBtn: document.getElementById('mobile-toggle-btn'),
             helpBtn: document.getElementById('help-btn'),
+            heroMiniHp: document.getElementById('hero-mini-hp'),
             heroLevel: document.getElementById('hero-level'),
             heroHpFill: document.getElementById('hero-hp-fill'),
             heroHpDisplay: document.getElementById('hero-hp-display'),
@@ -81,6 +83,11 @@ class Game {
             modalTitle: document.getElementById('modal-title'),
             modalContent: document.getElementById('modal-content'),
             modalCloseBtn: document.getElementById('modal-close-btn'),
+            // Mobile Icon-Only Tower Dock
+            mobileTowerDock: document.getElementById('mobile-tower-dock'),
+            dockTitle: document.getElementById('dock-title'),
+            dockOptions: document.getElementById('dock-options'),
+            dockCloseBtn: document.getElementById('dock-close-btn'),
             bossContainer: document.getElementById('boss-container'),
             bossName: document.getElementById('boss-name'),
             bossHpText: document.getElementById('boss-hp-text'),
@@ -189,6 +196,12 @@ class Game {
             this.dom.soundIcon.textContent = isMuted ? '🔇' : '🔊';
         });
 
+        if (this.dom.fullscreenBtn) {
+            this.dom.fullscreenBtn.addEventListener('click', () => {
+                this.toggleFullscreen();
+            });
+        }
+
         this.dom.helpBtn.addEventListener('click', () => {
             this.dom.helpModal.classList.remove('hidden');
         });
@@ -200,6 +213,12 @@ class Game {
         this.dom.modalCloseBtn.addEventListener('click', () => {
             this.closeTowerModal();
         });
+
+        if (this.dom.dockCloseBtn) {
+            this.dom.dockCloseBtn.addEventListener('click', () => {
+                this.closeTowerModal();
+            });
+        }
 
         // Ability Card Buttons
         this.dom.meteorBtn.addEventListener('click', () => {
@@ -241,6 +260,23 @@ class Game {
         } else {
             this.dom.mobileControls.classList.add('hidden');
             if (this.dom.mobileToggleBtn) this.dom.mobileToggleBtn.classList.remove('primary');
+        }
+    }
+
+    toggleFullscreen() {
+        if (!document.fullscreenElement && !document.webkitFullscreenElement) {
+            const el = document.documentElement;
+            if (el.requestFullscreen) {
+                el.requestFullscreen().catch(() => {});
+            } else if (el.webkitRequestFullscreen) {
+                el.webkitRequestFullscreen();
+            }
+        } else {
+            if (document.exitFullscreen) {
+                document.exitFullscreen().catch(() => {});
+            } else if (document.webkitExitFullscreen) {
+                document.webkitExitFullscreen();
+            }
         }
     }
 
@@ -458,17 +494,106 @@ class Game {
     }
 
     openTowerModal(spot) {
-        this.dom.modalContent.innerHTML = '';
-        this.dom.towerModal.classList.remove('hidden');
+        this.selectedSpot = spot;
+        const isMobile = this.input.isTouchMode || window.innerWidth <= 950;
 
-        // On mobile or small screens, center modal for effortless finger tapping
-        if (this.input.isTouchMode || window.innerWidth <= 900) {
-            this.dom.towerModal.style.left = '50%';
-            this.dom.towerModal.style.top = '50%';
-            this.dom.towerModal.style.transform = 'translate(-50%, -50%)';
+        if (isMobile) {
+            this.dom.towerModal.classList.add('hidden');
+            this.dom.mobileTowerDock.classList.remove('hidden');
+            this.dom.dockOptions.innerHTML = '';
+
+            if (!spot.tower) {
+                this.dom.dockTitle.textContent = "KULE İNŞA ET";
+                const options = [
+                    { type: 'archer', icon: "🏹", cost: 75 },
+                    { type: 'barracks', icon: "⚔️", cost: 95 },
+                    { type: 'archer_barracks', icon: "🎯", cost: 90 },
+                    { type: 'bomber', icon: "💣", cost: 110 },
+                    { type: 'mage', icon: "🔮", cost: 120 }
+                ];
+
+                options.forEach(opt => {
+                    const canAfford = this.gold >= opt.cost;
+                    const btn = document.createElement('button');
+                    btn.className = `dock-btn ${canAfford ? '' : 'disabled'}`;
+                    btn.innerHTML = `
+                        <span class="dock-icon">${opt.icon}</span>
+                        <span class="dock-cost">${opt.cost}G</span>
+                    `;
+                    if (canAfford) {
+                        btn.onclick = (e) => {
+                            e.stopPropagation();
+                            this.buildTower(spot, opt.type, opt.cost);
+                            this.closeTowerModal();
+                        };
+                    }
+                    this.dom.dockOptions.appendChild(btn);
+                });
+
+                const closeBtn = document.createElement('button');
+                closeBtn.className = 'dock-btn close-btn';
+                closeBtn.innerHTML = `<span class="dock-icon">❌</span><span class="dock-cost">İPTAL</span>`;
+                closeBtn.onclick = (e) => {
+                    e.stopPropagation();
+                    this.closeTowerModal();
+                };
+                this.dom.dockOptions.appendChild(closeBtn);
+
+            } else {
+                const tower = spot.tower;
+                this.dom.dockTitle.textContent = `${tower.name} [Lv.${tower.level}]`;
+
+                if (tower.level < tower.maxLevel) {
+                    const canAfford = this.gold >= tower.upgradeCost;
+                    const upgBtn = document.createElement('button');
+                    upgBtn.className = `dock-btn upg-btn ${canAfford ? '' : 'disabled'}`;
+                    upgBtn.innerHTML = `
+                        <span class="dock-icon">⬆️</span>
+                        <span class="dock-cost">${tower.upgradeCost}G</span>
+                    `;
+                    if (canAfford) {
+                        upgBtn.onclick = (e) => {
+                            e.stopPropagation();
+                            this.gold -= tower.upgradeCost;
+                            tower.totalInvested += tower.upgradeCost;
+                            tower.upgrade();
+                            this.effects.addText("GELİŞTİRİLDİ!", tower.x, tower.y - 18, '#fbbf24', 9, 1.4);
+                            this.closeTowerModal();
+                        };
+                    }
+                    this.dom.dockOptions.appendChild(upgBtn);
+                }
+
+                const sellValue = tower.getSellValue();
+                const sellBtn = document.createElement('button');
+                sellBtn.className = 'dock-btn sell-btn';
+                sellBtn.innerHTML = `
+                    <span class="dock-icon">🗑️</span>
+                    <span class="dock-cost">+${sellValue}G</span>
+                `;
+                sellBtn.onclick = (e) => {
+                    e.stopPropagation();
+                    this.sellTower(spot, sellValue);
+                    this.closeTowerModal();
+                };
+                this.dom.dockOptions.appendChild(sellBtn);
+
+                const closeBtn = document.createElement('button');
+                closeBtn.className = 'dock-btn close-btn';
+                closeBtn.innerHTML = `<span class="dock-icon">❌</span><span class="dock-cost">KAPAT</span>`;
+                closeBtn.onclick = (e) => {
+                    e.stopPropagation();
+                    this.closeTowerModal();
+                };
+                this.dom.dockOptions.appendChild(closeBtn);
+            }
+
         } else {
-            this.dom.towerModal.style.transform = 'none';
-            // Scale spot coordinates by 2 for the 1280x720 UI container!
+            // Desktop detailed modal
+            if (this.dom.mobileTowerDock) this.dom.mobileTowerDock.classList.add('hidden');
+            this.dom.modalContent.innerHTML = '';
+            this.dom.towerModal.classList.remove('hidden');
+
             const modalW = 380;
             const modalH = 340;
             let left = (spot.x * 2) + 40;
@@ -480,137 +605,138 @@ class Game {
 
             this.dom.towerModal.style.left = `${left}px`;
             this.dom.towerModal.style.top = `${top}px`;
-        }
-        this.dom.towerModal.style.transform = 'none';
+            this.dom.towerModal.style.transform = 'none';
 
-        if (!spot.tower) {
-            this.dom.modalTitle.textContent = "KULE İNŞA ET";
+            if (!spot.tower) {
+                this.dom.modalTitle.textContent = "KULE İNŞA ET";
 
-            const options = [
-                {
-                    type: 'archer',
-                    name: "Okçu Kulesi",
-                    cost: 75,
-                    icon: "🏹",
-                    desc: "Uzaktan seri ok atar. Uçan ve hızlı hedeflere etkilidir."
-                },
-                {
-                    type: 'barracks',
-                    name: "Savaşçı Kışlası",
-                    cost: 95,
-                    icon: "⚔️",
-                    desc: "Yola 2 kılıçlı savaşçı çıkarır, canavarları yolda tutar."
-                },
-                {
-                    type: 'archer_barracks',
-                    name: "Okçu Kulübesi",
-                    cost: 90,
-                    icon: "🎯",
-                    desc: "Yola 3 menzilli Okçu çıkarır! Uçan ve yer hedeflerini oklarlar (Savaşçıdan 1 fazla!)."
-                },
-                {
-                    type: 'bomber',
-                    name: "Bombacı Kulesi",
-                    cost: 110,
-                    icon: "💣",
-                    desc: "Havadan ağır bombalar atarak yerdeki zırhlı robot ve orkları ezer (Uçanlara vuramaz)."
-                },
-                {
-                    type: 'mage',
-                    name: "Büyücü Kulesi",
-                    cost: 120,
-                    icon: "🔮",
-                    desc: "Zırhı delen ve yavaşlatan sihirli küreler fırlatır (Uçanlara vurur)."
-                }
-            ];
+                const options = [
+                    {
+                        type: 'archer',
+                        name: "Okçu Kulesi",
+                        cost: 75,
+                        icon: "🏹",
+                        desc: "Uzaktan seri ok atar. Uçan ve hızlı hedeflere etkilidir."
+                    },
+                    {
+                        type: 'barracks',
+                        name: "Savaşçı Kışlası",
+                        cost: 95,
+                        icon: "⚔️",
+                        desc: "Yola 2 kılıçlı savaşçı çıkarır, canavarları yolda tutar."
+                    },
+                    {
+                        type: 'archer_barracks',
+                        name: "Okçu Kulübesi",
+                        cost: 90,
+                        icon: "🎯",
+                        desc: "Yola 3 menzilli Okçu çıkarır! Uçan ve yer hedeflerini oklarlar (Savaşçıdan 1 fazla!)."
+                    },
+                    {
+                        type: 'bomber',
+                        name: "Bombacı Kulesi",
+                        cost: 110,
+                        icon: "💣",
+                        desc: "Havadan ağır bombalar atarak yerdeki zırhlı robot ve orkları ezer (Uçanlara vuramaz)."
+                    },
+                    {
+                        type: 'mage',
+                        name: "Büyücü Kulesi",
+                        cost: 120,
+                        icon: "🔮",
+                        desc: "Zırhı delen ve yavaşlatan sihirli küreler fırlatır (Uçanlara vurur)."
+                    }
+                ];
 
-            options.forEach(opt => {
-                const canAfford = this.gold >= opt.cost;
-                const row = document.createElement('div');
-                row.className = `tower-build-option ${canAfford ? '' : 'disabled'}`;
-                row.innerHTML = `
-                    <div class="option-icon">${opt.icon}</div>
-                    <div class="option-details">
-                        <div class="option-title">${opt.name}</div>
-                        <div class="option-desc">${opt.desc}</div>
-                        <div class="option-cost">${opt.cost} ALTIN (G)</div>
-                    </div>
-                `;
+                options.forEach(opt => {
+                    const canAfford = this.gold >= opt.cost;
+                    const row = document.createElement('div');
+                    row.className = `tower-build-option ${canAfford ? '' : 'disabled'}`;
+                    row.innerHTML = `
+                        <div class="option-icon">${opt.icon}</div>
+                        <div class="option-details">
+                            <div class="option-title">${opt.name}</div>
+                            <div class="option-desc">${opt.desc}</div>
+                            <div class="option-cost">${opt.cost} ALTIN (G)</div>
+                        </div>
+                    `;
 
-                if (canAfford) {
-                    row.onclick = () => {
-                        this.buildTower(spot, opt.type, opt.cost);
-                        this.closeTowerModal();
-                    };
-                }
-                this.dom.modalContent.appendChild(row);
-            });
+                    if (canAfford) {
+                        row.onclick = () => {
+                            this.buildTower(spot, opt.type, opt.cost);
+                            this.closeTowerModal();
+                        };
+                    }
+                    this.dom.modalContent.appendChild(row);
+                });
 
-        } else {
-            const tower = spot.tower;
-            this.dom.modalTitle.textContent = `${tower.name} [LV.${tower.level}]`;
-
-            if (tower.level < tower.maxLevel) {
-                const canAfford = this.gold >= tower.upgradeCost;
-                let nextPreview = "";
-                if (tower.level === 1) {
-                    nextPreview = "Lv 2: Bakır kaplamalar, boyu uzar, hasar ve menzil katlanır!";
-                } else if (tower.level === 2) {
-                    nextPreview = "Lv 3: Kraliyet taş surları, altın sancaklar, en yüksek güç!";
-                }
-
-                const upgRow = document.createElement('div');
-                upgRow.className = `tower-upgrade-option ${canAfford ? '' : 'disabled'}`;
-                upgRow.innerHTML = `
-                    <div class="option-icon">⬆️</div>
-                    <div class="option-details">
-                        <div class="option-title">YÜKSELT (UPDATE)</div>
-                        <div class="option-desc">${nextPreview}</div>
-                        <div class="option-cost">${tower.upgradeCost} ALTIN (G)</div>
-                    </div>
-                `;
-
-                if (canAfford) {
-                    upgRow.onclick = () => {
-                        this.gold -= tower.upgradeCost;
-                        tower.totalInvested += tower.upgradeCost;
-                        tower.upgrade();
-                        this.effects.addText("GELİŞTİRİLDİ!", tower.x, tower.y - 18, '#fbbf24', 9, 1.4);
-                        this.closeTowerModal();
-                    };
-                }
-                this.dom.modalContent.appendChild(upgRow);
             } else {
-                const maxRow = document.createElement('div');
-                maxRow.className = "tower-build-option disabled";
-                maxRow.innerHTML = `
-                    <div class="option-icon">👑</div>
-                    <div class="option-details">
-                        <div class="option-title">MAKSİMUM SEVİYE!</div>
-                        <div class="option-desc">Kule krallığın zirve gücüne ulaştı.</div>
-                    </div>
-                `;
-                this.dom.modalContent.appendChild(maxRow);
-            }
+                const tower = spot.tower;
+                this.dom.modalTitle.textContent = `${tower.name} [LV.${tower.level}]`;
 
-            const sellValue = tower.getSellValue();
-            const actionRow = document.createElement('div');
-            actionRow.className = 'action-row';
-            actionRow.innerHTML = `
-                <button class="pixel-btn btn-danger action-btn">
-                    🗑️ YIK (+${sellValue}G)
-                </button>
-            `;
-            actionRow.querySelector('button').onclick = () => {
-                this.sellTower(spot, sellValue);
-                this.closeTowerModal();
-            };
-            this.dom.modalContent.appendChild(actionRow);
+                if (tower.level < tower.maxLevel) {
+                    const canAfford = this.gold >= tower.upgradeCost;
+                    let nextPreview = "";
+                    if (tower.level === 1) {
+                        nextPreview = "Lv 2: Bakır kaplamalar, boyu uzar, hasar ve menzil katlanır!";
+                    } else if (tower.level === 2) {
+                        nextPreview = "Lv 3: Kraliyet taş surları, altın sancaklar, en yüksek güç!";
+                    }
+
+                    const upgRow = document.createElement('div');
+                    upgRow.className = `tower-upgrade-option ${canAfford ? '' : 'disabled'}`;
+                    upgRow.innerHTML = `
+                        <div class="option-icon">⬆️</div>
+                        <div class="option-details">
+                            <div class="option-title">YÜKSELT (UPDATE)</div>
+                            <div class="option-desc">${nextPreview}</div>
+                            <div class="option-cost">${tower.upgradeCost} ALTIN (G)</div>
+                        </div>
+                    `;
+
+                    if (canAfford) {
+                        upgRow.onclick = () => {
+                            this.gold -= tower.upgradeCost;
+                            tower.totalInvested += tower.upgradeCost;
+                            tower.upgrade();
+                            this.effects.addText("GELİŞTİRİLDİ!", tower.x, tower.y - 18, '#fbbf24', 9, 1.4);
+                            this.closeTowerModal();
+                        };
+                    }
+                    this.dom.modalContent.appendChild(upgRow);
+                } else {
+                    const maxRow = document.createElement('div');
+                    maxRow.className = "tower-build-option disabled";
+                    maxRow.innerHTML = `
+                        <div class="option-icon">👑</div>
+                        <div class="option-details">
+                            <div class="option-title">MAKSİMUM SEVİYE!</div>
+                            <div class="option-desc">Kule krallığın zirve gücüne ulaştı.</div>
+                        </div>
+                    `;
+                    this.dom.modalContent.appendChild(maxRow);
+                }
+
+                const sellValue = tower.getSellValue();
+                const actionRow = document.createElement('div');
+                actionRow.className = 'action-row';
+                actionRow.innerHTML = `
+                    <button class="pixel-btn btn-danger action-btn">
+                        🗑️ YIK (+${sellValue}G)
+                    </button>
+                `;
+                actionRow.querySelector('button').onclick = () => {
+                    this.sellTower(spot, sellValue);
+                    this.closeTowerModal();
+                };
+                this.dom.modalContent.appendChild(actionRow);
+            }
         }
     }
 
     closeTowerModal() {
         this.dom.towerModal.classList.add('hidden');
+        if (this.dom.mobileTowerDock) this.dom.mobileTowerDock.classList.add('hidden');
         this.selectedSpot = null;
     }
 
@@ -774,6 +900,9 @@ class Game {
         this.dom.heroLevel.textContent = this.hero.level;
         this.dom.heroHpDisplay.textContent = `${Math.ceil(this.hero.hp)}/${this.hero.maxHp}`;
         this.dom.heroHpFill.style.width = `${Math.max(0, (this.hero.hp / this.hero.maxHp) * 100)}%`;
+        if (this.dom.heroMiniHp) {
+            this.dom.heroMiniHp.textContent = Math.ceil(this.hero.hp);
+        }
 
         const xpPct = Math.min(100, (this.hero.xp / this.hero.xpNeeded) * 100);
         this.dom.heroXpFill.style.width = `${xpPct}%`;

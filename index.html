@@ -2,7 +2,10 @@
 <html lang="tr">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <title>Efsanevi Kahraman & Kule Savunması - 16-Bit Pixel Edition</title>
     <link rel="stylesheet" href="style.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -34,17 +37,26 @@
                     <span class="pixel-icon">⏳</span>
                     <span>GELECEK: <strong id="countdown-text">6s</strong></span>
                 </div>
+                <!-- Mobile Compact Hero HP Badge (Visible on mobile) -->
+                <div class="pixel-badge hero-mini-badge" id="hero-mini-badge" title="Kahraman Canı">
+                    <span class="pixel-icon">🗡️</span>
+                    <span id="hero-mini-hp">280</span>
+                </div>
             </div>
 
             <div class="header-controls">
                 <button id="next-wave-btn" class="pixel-btn primary" title="Dalgayı hemen başlatıp +15 bonus altın al">
-                    ⚡ ERKEN BAŞLAT (+15G)
+                    <span class="btn-text-desktop">⚡ ERKEN BAŞLAT (+15G)</span>
+                    <span class="btn-text-mobile">⚡ +15G</span>
                 </button>
                 <button id="speed-btn" class="pixel-btn mini" title="Oyun Hızı">
                     <span id="speed-text">1X</span>
                 </button>
                 <button id="sound-btn" class="pixel-btn mini" title="Sesi Aç/Kapat">
                     <span id="sound-icon">🔊</span>
+                </button>
+                <button id="fullscreen-btn" class="pixel-btn mini" title="Tam Ekran">
+                    <span>⛶</span>
                 </button>
                 <button id="mobile-toggle-btn" class="pixel-btn mini" title="Mobil Dokunmatik Tuşları Aç/Kapat">
                     <span>📱</span>
@@ -194,7 +206,16 @@
             </div>
         </div>
 
-        <!-- Tower Build & Upgrade Modal -->
+        <!-- Mobile Tower Quick Picker Dock (Icon-Only, Zero-Text Clutter) -->
+        <div id="mobile-tower-dock" class="pixel-panel hidden">
+            <div class="dock-header">
+                <span id="dock-title">KULE İNŞA ET</span>
+                <button id="dock-close-btn" class="close-x">&times;</button>
+            </div>
+            <div id="dock-options" class="dock-options"></div>
+        </div>
+
+        <!-- Tower Build & Upgrade Modal (Desktop View) -->
         <div id="tower-modal" class="hidden">
             <div class="modal-card pixel-panel">
                 <div class="modal-header">

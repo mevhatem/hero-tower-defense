@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Efsanevi Kahraman & Kule Savunması - 16-Bit Pixel Edition</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Silkscreen:wght@400;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div id="game-container">
+        <!-- 640x360 Native Pixel Canvas (Scaled 2x with pixelated rendering) -->
+        <canvas id="gameCanvas" width="640" height="360"></canvas>
+
+        <!-- Top Header Stats Bar -->
+        <header id="top-bar">
+            <div class="stat-group">
+                <div class="pixel-badge lives-badge" title="Kalan Canlar">
+                    <span class="pixel-icon">♥</span>
+                    <span id="lives-display">20</span>
+                </div>
+                <div class="pixel-badge gold-badge" title="Altın">
+                    <span class="pixel-icon">🪙</span>
+                    <span id="gold-display">130</span>
+                </div>
+                <div class="pixel-badge wave-badge" title="Dalga Bilgisi">
+                    <span class="pixel-icon">⚔</span>
+                    <span>WAVE <strong id="wave-display">1</strong>/<span id="max-wave-display">10</span></span>
+                </div>
+                <!-- Auto Wave Countdown Badge -->
+                <div class="pixel-badge countdown-badge" id="countdown-badge" title="Yeni Dalga Otomatik Başlama Sayacı">
+                    <span class="pixel-icon">⏳</span>
+                    <span>GELECEK: <strong id="countdown-text">6s</strong></span>
+                </div>
+            </div>
+
+            <div class="header-controls">
+                <button id="next-wave-btn" class="pixel-btn primary" title="Dalgayı hemen başlatıp +15 bonus altın al">
+                    ⚡ ERKEN BAŞLAT (+15G)
+                </button>
+                <button id="speed-btn" class="pixel-btn mini" title="Oyun Hızı">
+                    <span id="speed-text">1X</span>
+                </button>
+                <button id="sound-btn" class="pixel-btn mini" title="Sesi Aç/Kapat">
+                    <span id="sound-icon">🔊</span>
+                </button>
+                <button id="mobile-toggle-btn" class="pixel-btn mini" title="Mobil Dokunmatik Tuşları Aç/Kapat">
+                    <span>📱</span>
+                </button>
+                <button id="help-btn" class="pixel-btn mini" title="Nasıl Oynanır?">
+                    <span>?</span>
+                </button>
+            </div>
+        </header>
+
+        <!-- Boss Bar (Visible during boss waves) -->
+        <div id="boss-container" class="hidden">
+            <div class="boss-info">
+                <span id="boss-name">KARA ORK EFENDİSİ</span>
+                <span id="boss-hp-text">2500 / 2500</span>
+            </div>
+            <div class="boss-bar-track">
+                <div id="boss-hp-fill" style="width: 100%;"></div>
+            </div>
+        </div>
+
+        <!-- Floating UI / Wave Announcement -->
+        <div id="wave-announcement" class="hidden">
+            <h2 id="announcement-title">DALGA 1: ORK ÖNCÜLERİ</h2>
+            <p id="announcement-subtitle">Ağaç canavarları ve orklar yaklaşıyor! Yolu savun!</p>
+        </div>
+
+        <!-- Bottom Left: Hero Status Card -->
+        <div id="hero-hud" class="pixel-panel">
+            <div class="hero-avatar">
+                <div class="avatar-ring">
+                    <div class="hero-portrait">⚔️</div>
+                    <div class="hero-level-badge" id="hero-level">1</div>
+                </div>
+            </div>
+            <div class="hero-stats">
+                <div class="hero-header-line">
+                    <span class="hero-name">KAHRAMAN</span>
+                    <span class="hero-hp-text" id="hero-hp-display">300/300</span>
+                </div>
+                <div class="bar-container hp-bar">
+                    <div id="hero-hp-fill" style="width: 100%;"></div>
+                </div>
+                <div class="hero-xp-line">
+                    <span class="xp-label">XP</span>
+                    <div class="bar-container xp-bar">
+                        <div id="hero-xp-fill" style="width: 0%;"></div>
+                    </div>
+                </div>
+                <div class="hero-substats">
+                    <span>ATK:<strong id="hero-dmg">45</strong></span>
+                    <span>DASH:<strong id="hero-dash-status">HAZIR</strong></span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Bottom Center: Pixel Abilities Bar -->
+        <div id="abilities-hud">
+            <!-- 1. Göktaşı Yağmuru -->
+            <div class="ability-card pixel-panel active" id="meteor-btn" title="Göktaşı Yağmuru [Q / 1]">
+                <div class="ability-icon">☄️</div>
+                <div class="ability-info">
+                    <span class="ability-name">METEOR</span>
+                    <span class="ability-hotkey">[Q/1]</span>
+                </div>
+                <div class="ability-cooldown-overlay" id="meteor-cd-overlay"></div>
+                <div class="ability-timer" id="meteor-timer">HAZIR</div>
+            </div>
+
+            <!-- 2. Köylü Çağır -->
+            <div class="ability-card pixel-panel active" id="peasant-btn" title="Yola 2 Köylü Savaşçı Çağır [2]">
+                <div class="ability-icon">🌾</div>
+                <div class="ability-info">
+                    <span class="ability-name">KÖYLÜ</span>
+                    <span class="ability-hotkey">[2]</span>
+                </div>
+                <div class="ability-cooldown-overlay" id="peasant-cd-overlay"></div>
+                <div class="ability-timer" id="peasant-timer">HAZIR</div>
+            </div>
+
+            <!-- 3. Kutsal Şifa -->
+            <div class="ability-card pixel-panel active" id="heal-btn" title="Kutsal Şifa [E / 3]">
+                <div class="ability-icon">✨</div>
+                <div class="ability-info">
+                    <span class="ability-name">ŞİFA</span>
+                    <span class="ability-hotkey">[E/3]</span>
+                </div>
+                <div class="ability-cooldown-overlay" id="heal-cd-overlay"></div>
+                <div class="ability-timer" id="heal-timer">HAZIR</div>
+            </div>
+        </div>
+
+        <!-- Controls Guide Hint (Bottom Right - Desktop) -->
+        <div id="controls-hint" class="pixel-panel">
+            <div><kbd>WASD</kbd>: HAREKET</div>
+            <div><kbd>SOL TIK</kbd>: KILIÇ VUR</div>
+            <div><kbd>SPACE</kbd>: DASH</div>
+            <div><kbd>Q</kbd>: METEOR</div>
+            <div><kbd>2</kbd>: 2 KÖYLÜ ÇAĞIR</div>
+            <div><kbd>E</kbd>: ŞİFA</div>
+        </div>
+
+        <!-- ================= MOBILE TOUCH CONTROLS (Auto-detected on Mobile) ================= -->
+        <div id="mobile-controls" class="hidden">
+            <!-- Left: Virtual Analog Joystick -->
+            <div id="mobile-joystick-zone">
+                <div id="joystick-base">
+                    <div id="joystick-stick">⚔️</div>
+                </div>
+            </div>
+
+            <!-- Right: Action Buttons (Attack, Dash, Abilities) -->
+            <div id="mobile-actions-zone">
+                <div class="mobile-action-row upper-row">
+                    <button id="touch-meteor-btn" class="touch-action-btn skill-btn" title="Göktaşı">
+                        <span class="btn-icon">☄️</span>
+                        <span class="btn-label">METEOR</span>
+                    </button>
+                    <button id="touch-peasant-btn" class="touch-action-btn skill-btn" title="Köylüler">
+                        <span class="btn-icon">🌾</span>
+                        <span class="btn-label">KÖYLÜ</span>
+                    </button>
+                    <button id="touch-heal-btn" class="touch-action-btn skill-btn" title="Şifa">
+                        <span class="btn-icon">✨</span>
+                        <span class="btn-label">ŞİFA</span>
+                    </button>
+                </div>
+                <div class="mobile-action-row lower-row">
+                    <button id="touch-dash-btn" class="touch-action-btn dash-btn" title="Atıl">
+                        <span class="btn-icon">⚡</span>
+                        <span class="btn-label">ATIL</span>
+                    </button>
+                    <button id="touch-attack-btn" class="touch-action-btn attack-btn" title="Saldır">
+                        <span class="btn-icon">🗡️</span>
+                        <span class="btn-label">VUR</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Mobile Landscape Rotation Advisory Hint -->
+        <div id="portrait-advisory" class="hidden">
+            <div class="advisory-card pixel-panel">
+                <div class="rotate-phone-icon">📱 ➔ 🔄</div>
+                <h3>EKRANI YATAY ÇEVİRİN</h3>
+                <p>En iyi kule savunması deneyimi için cihazınızı yatay konuma getirin!</p>
+            </div>
+        </div>
+
+        <!-- Tower Build & Upgrade Modal -->
+        <div id="tower-modal" class="hidden">
+            <div class="modal-card pixel-panel">
+                <div class="modal-header">
+                    <h3 id="modal-title">KULE İNŞA ET</h3>
+                    <button id="modal-close-btn" class="close-x">&times;</button>
+                </div>
+                <div class="modal-body" id="modal-content"></div>
+            </div>
+        </div>
+
+        <!-- How to Play Modal -->
+        <div id="help-modal" class="modal-backdrop hidden">
+            <div class="dialog-box pixel-panel">
+                <h2>🏰 16-BIT KAHRAMAN SAVUNMASI</h2>
+                <div class="help-content">
+                    <ul>
+                        <li>🗡️ <strong>HARDCORE ZORLUK:</strong> Başlangıçta sadece 1 kuleye yetecek altınınız var (130G). Stratejinizi iyi kurun!</li>
+                        <li>🦇 <strong>UÇAN CANAVARLAR (Yarasa & Wyvern):** Havadan uçup yerdeki askerleri aşarlar! Yer bombaları ve savaşçılar havaya vuramaz; Okçu Kuleleri, Okçu Kulübesi ve Büyücü Kulesi ile avlayın!</li>
+                        <li>🎯 <strong>Okçu Kulübesi (90G - YENİ):</strong> Yola 3 adet (Lv 3'te 4 adet) menzilli okçu asker çıkartır! Savaşçıdan 1 fazla asker verir ve uçan yaratıkları ok yağmuruna tutarlar!</li>
+                        <li>🛡️ <strong>Kalkanlı Orklar:</strong> Mavi kalkanları ön hasarı emer; kalkan parçalanmadan canları gitmez!</li>
+                        <li>🔮 <strong>Ork Şamanları:</strong> Arkadan müttefiklerini iyileştirir (+50 HP); önce şamanları düşürün!</li>
+                        <li>🐉 <strong>Gök Korsanı Wyvern:</strong> Dalga 7'de göklerden gelen uçan alev ejderhası boss!</li>
+                        <li>⚙️ <strong>Çelik Robotlar:</strong> İlerledikçe arkasından patlayıcı minik Nano-Dronelar fırlatır!</li>
+                        <li>🌲 <strong>Ağaç Canavarları (Treant):</strong> Sürekli can yeniler ve yakınındakileri kökleriyle yere çiviler!</li>
+                        <li>🌾 <strong>Köylü Çağır [2]:</strong> Acil durumlarda yola 2 fedai köylü çağırarak yolu tıkayın!</li>
+                        <li>☄️ <strong>Meteor [Q]:</strong> Büyük kalabalıkların canını yarı yarıya yakıp temizleyin.</li>
+                    </ul>
+                </div>
+                <button id="help-close-btn" class="pixel-btn primary large">ANLADIM, SAVAŞA DÖN!</button>
+            </div>
+        </div>
+
+        <!-- Game Over & Victory Overlay -->
+        <div id="game-over-modal" class="modal-backdrop hidden">
+            <div class="dialog-box pixel-panel end-dialog">
+                <div class="end-icon" id="end-icon">💀</div>
+                <h2 id="end-title">SAVUNMA ÇÖKTÜ!</h2>
+                <p id="end-message">Canavarlar krallığın savunma hattını aştı...</p>
+                <div class="end-stats">
+                    <div class="stat-box pixel-panel">
+                        <span class="label">DALGA</span>
+                        <span class="value" id="end-waves">0</span>
+                    </div>
+                    <div class="stat-box pixel-panel">
+                        <span class="label">ÖLDÜRME</span>
+                        <span class="value" id="end-kills">0</span>
+                    </div>
+                    <div class="stat-box pixel-panel">
+                        <span class="label">ALTIN</span>
+                        <span class="value" id="end-gold">0</span>
+                    </div>
+                </div>
+                <button id="restart-btn" class="pixel-btn primary large">YENİDEN OYNA</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Script imports in correct dependency order -->
+    <script src="js/audio.js"></script>
+    <script src="js/effects.js"></script>
+    <script src="js/map.js"></script>
+    <script src="js/soldiers.js"></script>
+    <script src="js/towers.js"></script>
+    <script src="js/enemies.js"></script>
+    <script src="js/hero.js"></script>
+    <script src="js/waves.js"></script>
+    <script src="js/game.js"></script>
+</body>
+</html>

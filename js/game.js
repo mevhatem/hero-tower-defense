@@ -107,6 +107,7 @@ class Game {
             restartBtn: document.getElementById('restart-btn'),
             // Mobile Touch Elements
             mobileControls: document.getElementById('mobile-controls'),
+            joystickZone: document.getElementById('mobile-joystick-zone'),
             joystickBase: document.getElementById('joystick-base'),
             joystickStick: document.getElementById('joystick-stick'),
             touchAttackBtn: document.getElementById('touch-attack-btn'),
@@ -346,17 +347,16 @@ class Game {
             }
         }, { passive: false });
 
-        // 2. Virtual Analog Joystick
+        // 2. Floating Dynamic Analog Joystick (Pops up wherever player touches in bottom-left zone)
         let joystickTouchId = null;
-        let baseRect = null;
+        let startX = 0;
+        let startY = 0;
+        let touchStartTime = 0;
         const maxRadius = 38;
 
         const updateJoystick = (touch) => {
-            if (!baseRect) baseRect = this.dom.joystickBase.getBoundingClientRect();
-            const centerX = baseRect.left + baseRect.width / 2;
-            const centerY = baseRect.top + baseRect.height / 2;
-            let dx = touch.clientX - centerX;
-            let dy = touch.clientY - centerY;
+            let dx = touch.clientX - startX;
+            let dy = touch.clientY - startY;
             const dist = Math.hypot(dx, dy);
 
             if (dist > maxRadius) {
@@ -366,8 +366,8 @@ class Game {
 
             this.dom.joystickStick.style.transform = `translate(${dx}px, ${dy}px)`;
 
-            // Deadzone of 6px
-            if (dist > 6) {
+            // Deadzone of 5px
+            if (dist > 5) {
                 const normLen = Math.hypot(dx, dy);
                 this.input.moveX = dx / normLen;
                 this.input.moveY = dy / normLen;
@@ -378,21 +378,43 @@ class Game {
             }
         };
 
-        const resetJoystick = () => {
+        const hideJoystick = () => {
             joystickTouchId = null;
             this.input.moveX = 0;
             this.input.moveY = 0;
             this.dom.joystickStick.style.transform = 'translate(0px, 0px)';
+            this.dom.joystickBase.style.display = 'none';
+            this.dom.joystickBase.style.opacity = '0';
         };
 
-        this.dom.joystickBase.addEventListener('touchstart', (e) => {
-            e.preventDefault();
-            sounds.init();
-            const touch = e.changedTouches[0];
-            joystickTouchId = touch.identifier;
-            baseRect = this.dom.joystickBase.getBoundingClientRect();
-            updateJoystick(touch);
-        }, { passive: false });
+        if (this.dom.joystickZone) {
+            this.dom.joystickZone.addEventListener('touchstart', (e) => {
+                sounds.init();
+                const touch = e.changedTouches[0];
+
+                if (this.hero.isAimingMeteor || this.hero.isAimingPeasant) {
+                    const coords = getCanvasTouchCoords(touch);
+                    this.input.mouseX = coords.x;
+                    this.input.mouseY = coords.y;
+                    this.input.mouseLeft = true;
+                    e.preventDefault();
+                    return;
+                }
+
+                e.preventDefault();
+                joystickTouchId = touch.identifier;
+                startX = touch.clientX;
+                startY = touch.clientY;
+                touchStartTime = performance.now();
+
+                // Dynamic Spawn: Place the joystick circle right under the player's thumb!
+                this.dom.joystickBase.style.left = `${touch.clientX}px`;
+                this.dom.joystickBase.style.top = `${touch.clientY}px`;
+                this.dom.joystickBase.style.display = 'flex';
+                this.dom.joystickBase.style.opacity = '1';
+                this.dom.joystickStick.style.transform = 'translate(0px, 0px)';
+            }, { passive: false });
+        }
 
         window.addEventListener('touchmove', (e) => {
             if (joystickTouchId === null) return;
@@ -407,15 +429,25 @@ class Game {
         window.addEventListener('touchend', (e) => {
             if (joystickTouchId === null) return;
             for (let i = 0; i < e.changedTouches.length; i++) {
-                if (e.changedTouches[i].identifier === joystickTouchId) {
-                    resetJoystick();
+                const touch = e.changedTouches[i];
+                if (touch.identifier === joystickTouchId) {
+                    const elapsed = performance.now() - touchStartTime;
+                    const movedDist = Math.hypot(touch.clientX - startX, touch.clientY - startY);
+
+                    // If it was a quick stationary tap (< 200ms and moved < 8px), treat it as a map tap!
+                    if (elapsed < 200 && movedDist < 8) {
+                        const coords = getCanvasTouchCoords(touch);
+                        this.handleClick(coords.x, coords.y);
+                    }
+
+                    hideJoystick();
                     break;
                 }
             }
         });
 
         window.addEventListener('touchcancel', (e) => {
-            if (joystickTouchId !== null) resetJoystick();
+            if (joystickTouchId !== null) hideJoystick();
         });
 
         // 3. Mobile Action Buttons

@@ -777,29 +777,36 @@ canvas#gameCanvas {
     padding: 16px 20px;
 }
 
-/* Left: Virtual Joystick */
+/* Left: Floating Dynamic Virtual Joystick Touch Zone */
 #mobile-joystick-zone {
     pointer-events: auto;
-    position: relative;
-    width: 100px;
-    height: 100px;
-    margin-bottom: 6px;
+    position: fixed;
+    left: 0;
+    bottom: 0;
+    width: 48vw;
+    height: 75vh;
     touch-action: none;
+    z-index: 34;
 }
 
 #joystick-base {
-    position: relative;
+    position: fixed;
     width: 96px;
     height: 96px;
     border-radius: 50%;
-    background: radial-gradient(circle, rgba(30, 41, 59, 0.5) 0%, rgba(15, 23, 42, 0.75) 100%);
-    border: 2px solid rgba(56, 189, 248, 0.6);
-    box-shadow: 0 0 12px rgba(56, 189, 248, 0.3), inset 0 0 8px rgba(0, 0, 0, 0.8);
-    display: flex;
+    background: radial-gradient(circle, rgba(30, 41, 59, 0.55) 0%, rgba(15, 23, 42, 0.85) 100%);
+    border: 2px solid #38bdf8;
+    box-shadow: 0 0 16px rgba(56, 189, 248, 0.45), inset 0 0 10px rgba(0, 0, 0, 0.85);
+    display: none;
+    opacity: 0;
     align-items: center;
     justify-content: center;
     user-select: none;
     -webkit-user-select: none;
+    pointer-events: none;
+    transform: translate(-50%, -50%);
+    z-index: 36;
+    transition: opacity 0.08s ease;
 }
 
 #joystick-stick {
@@ -816,7 +823,7 @@ canvas#gameCanvas {
     font-size: 16px;
     pointer-events: none;
     transform: translate(0px, 0px);
-    transition: transform 0.04s ease-out;
+    transition: transform 0.03s ease-out;
 }
 
 /* Right: Mobile Action Buttons */
@@ -1043,18 +1050,19 @@ canvas#gameCanvas {
 
     #mobile-joystick-zone {
         position: fixed !important;
-        left: max(14px, env(safe-area-inset-left)) !important;
-        bottom: max(14px, env(safe-area-inset-bottom)) !important;
-        width: 96px !important;
-        height: 96px !important;
+        left: 0 !important;
+        bottom: 0 !important;
+        width: 48vw !important;
+        height: 78vh !important;
         pointer-events: auto !important;
+        touch-action: none !important;
     }
 
     #joystick-base {
         width: 90px !important;
         height: 90px !important;
-        background: radial-gradient(circle, rgba(30, 41, 59, 0.45) 0%, rgba(15, 23, 42, 0.7) 100%) !important;
-        border: 2px solid rgba(56, 189, 248, 0.6) !important;
+        transform: translate(-50%, -50%) !important;
+        pointer-events: none !important;
     }
 
     #joystick-stick {
